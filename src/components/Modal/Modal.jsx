@@ -5,18 +5,16 @@ import { createPortal } from 'react-dom';
 const modalRoot = document.getElementById('modal-root');
 
 const Modal = ({ url, closeModal }) => {
-  useEffect(() => {
-    document.addEventListener('keydown', closeThisModal);
-    return () => {
-      document.removeEventListener('keydown', closeThisModal);
-    };
-  }, []);
-
   const closeThisModal = ({ target, currentTarget, code }) => {
     if (target === currentTarget || code === 'Escape') {
       closeModal();
     }
   };
+
+  useEffect(() => {
+    document.addEventListener('keydown', closeThisModal);
+    return () => document.removeEventListener('keydown', closeThisModal);
+  }, []);
 
   return createPortal(
     <div onClick={closeThisModal} className={styles.overlay}>
