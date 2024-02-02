@@ -5,7 +5,6 @@ const Searchbar = ({ onSubmit }) => {
   const [state, setState] = useState({
     query: '',
   });
-
   const handleChange = ({ target }) => {
     const { name, value } = target;
     setState({
@@ -13,7 +12,6 @@ const Searchbar = ({ onSubmit }) => {
       [name]: value,
     });
   };
-
   const handleSubmit = e => {
     e.preventDefault();
     onSubmit({ ...state });
