@@ -1,5 +1,5 @@
 import styles from './search-form.module.css';
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { ThreeDots } from 'react-loader-spinner';
 import { getPictures } from '../../api/pictures';
 import Searchbar from '../Searchbar/Searchbar';
@@ -7,115 +7,85 @@ import ImageGallery from '../ImageGallery/ImageGallery';
 import Button from 'components/Button/Button';
 import Modal from 'components/Modal/Modal';
 
-class SearchForm extends Component {
-  state = {
-    pictures: [],
-    query: '',
-    isLoading: false,
-    error: null,
-    page: 1,
-    modalOpen: false,
-    largeImage: null,
-    hiddenLoadMoreBtn: false,
-  };
+const SearchForm = () => {
+  const [pictures, setPictures] = useState([]);
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [largeImage, setLargeImage] = useState(null);
+  const [hiddenBtn, setHiddenBtn] = useState(false);
 
-  async componentDidUpdate(prevProps, prevState) {
-    const { query, page } = this.state;
-    if (query && (query !== prevState.query || page !== prevState.page)) {
-      this.setState({
-        isLoading: true,
-      });
+  useEffect(() => {
+    const fetchPictures = async () => {
       try {
+        setLoading(true);
         const { data } = await getPictures(query, page);
-        this.setState(({ pictures }) => ({
-          pictures: data.hits?.length ? [...pictures, ...data.hits] : pictures,
-        }));
-
+        setPictures(prevPictures =>
+          data.hits?.length ? [...prevPictures, ...data.hits] : prevPictures
+        );
         if (page < Math.ceil(data.totalHits / 12)) {
-          this.setState(() => ({
-            hiddenLoadMoreBtn: true,
-          }));
+          setHiddenBtn(true);
         } else {
-          this.setState(() => ({
-            hiddenLoadMoreBtn: false,
-          }));
+          setHiddenBtn(false);
         }
       } catch (error) {
-        this.setState({
-          error: error.message,
-        });
+        setError(error.message);
       } finally {
-        this.setState({
-          isLoading: false,
-        });
+        setLoading(false);
       }
+    };
+    if (query) {
+      fetchPictures();
     }
-  }
+  }, [query, page]);
 
-  handleSearch = ({ query }) => {
-    this.setState({
-      query,
-      pictures: [],
-      page: 1,
-    });
+  const handleSearch = ({ query }) => {
+    setQuery(query);
+    setPictures([]);
+    setPage(1);
   };
 
-  loadMore = () => {
-    this.setState(({ page }) => ({
-      page: page + 1,
-    }));
+  const loadMore = () => {
+    setPage(page + 1);
   };
 
-  showModal = url => {
-    this.setState({
-      modalOpen: true,
-      largeImage: url,
-    });
+  const showModal = url => {
+    setModalOpen(true);
+    setLargeImage(url);
   };
 
-  closeModal = () => {
-    this.setState({
-      modalOpen: false,
-      picturesDetails: {},
-    });
+  const closeModal = () => {
+    setModalOpen(false);
+    setLargeImage(null);
   };
 
-  render() {
-    const { handleSearch, loadMore, showModal, closeModal } = this;
-    const {
-      pictures,
-      error,
-      isLoading,
-      modalOpen,
-      largeImage,
-      hiddenLoadMoreBtn,
-    } = this.state;
-    const pictureAre = Boolean(pictures.length);
-    return (
-      <>
-        <Searchbar onSubmit={handleSearch} />
-        {error && <p className={styles.error}>{error}</p>}
-        {isLoading && (
-          <ThreeDots
-            visible={true}
-            height="150"
-            width="200"
-            color="#2dd6c5"
-            radius="10"
-            ariaLabel="three-dots-loading"
-            wrapperStyle={{ marginLeft: '40%' }}
-          />
-        )}
-        {pictureAre && <ImageGallery items={pictures} showModal={showModal} />}
-        {pictureAre && hiddenLoadMoreBtn && (
-          <Button type="button" onClick={loadMore}>
-            Load more
-          </Button>
-        )}
-        {modalOpen && <Modal url={largeImage} closeModal={closeModal} />}
-      </>
-    );
-  }
-}
+  const pictureAre = Boolean(pictures.length);
+  return (
+    <>
+      <Searchbar onSubmit={handleSearch} />
+      {error && <p className={styles.error}>{error}</p>}
+      {loading && (
+        <ThreeDots
+          visible={true}
+          height="150"
+          width="200"
+          color="#2dd6c5"
+          radius="10"
+          ariaLabel="three-dots-loading"
+          wrapperStyle={{ marginLeft: '40%' }}
+        />
+      )}
+      {pictureAre && <ImageGallery items={pictures} showModal={showModal} />}
+      {pictureAre && hiddenBtn && (
+        <Button type="button" onClick={loadMore}>
+          Load more
+        </Button>
+      )}
+      {modalOpen && <Modal url={largeImage} closeModal={closeModal} />}
+    </>
+  );
+};
 
 export default SearchForm;
